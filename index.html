@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leitor Bimodal & Treino Cognitivo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            sepia: {
+              bg: '#fbf0d9',
+              card: '#f4e4bc',
+              text: '#5f4b32',
+              highlight: '#fde047'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .active-paragraph {
+      border-left: 4px solid #2563eb;
+      padding-left: 1rem;
+      background-color: rgba(37, 99, 235, 0.08);
+      border-radius: 0 0.5rem 0.5rem 0;
+      transition: all 0.2s ease-in-out;
+    }
+    .sepia-mode .active-paragraph {
+      border-left-color: #b45309;
+      background-color: rgba(180, 83, 9, 0.12);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-full flex flex-col font-sans transition-colors duration-200" id="appBody">
+
+  <!-- Cabeçalho -->
+  <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10 shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-600 text-white p-2 rounded-xl font-bold text-xl">🧠</div>
+        <div>
+          <h1 class="text-xl font-bold leading-tight">Leitor Bimodal</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Exercício Cognitivo por Áudio e Leitura</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Temas -->
+        <button id="themeLight" class="px-3 py-1.5 rounded-lg border text-sm font-medium bg-slate-100 dark:bg-slate-700">Claro</button>
+        <button id="themeSepia" class="px-3 py-1.5 rounded-lg border text-sm font-medium bg-[#fbf0d9] text-[#5f4b32]">Sépia</button>
+        <button id="themeDark" class="px-3 py-1.5 rounded-lg border text-sm font-medium bg-slate-800 text-white">Escuro</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="max-w-5xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Painel Lateral: Controle e Estatísticas -->
+    <aside class="space-y-6">
+      
+      <!-- Card Metas Cognitivas -->
+      <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <h2 class="text-base font-bold mb-4 flex items-center gap-2">
+          <span>📊</span> Treino Cognitivo Diário
+        </h2>
+        
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-slate-600 dark:text-slate-300">Meta Diária (15 min)</span>
+              <span id="timeGoalText" class="font-bold">0 / 15 min</span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-slate-700 h-3 rounded-full overflow-hidden">
+              <div id="timeProgressBar" class="bg-blue-600 h-full w-0 transition-all duration-300"></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl text-center">
+              <p class="text-xs text-slate-500 dark:text-slate-400">Palavras Lidas</p>
+              <p id="statWords" class="text-xl font-bold text-blue-600 dark:text-blue-400">0</p>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl text-center">
+              <p class="text-xs text-slate-500 dark:text-slate-400">Sequência</p>
+              <p id="statStreak" class="text-xl font-bold text-emerald-600 dark:text-emerald-400">1 Dia</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card Seleção de Livro / Texto -->
+      <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+        <h2 class="text-base font-bold flex items-center gap-2">
+          <span>📚</span> Biblioteca
+        </h2>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Selecione uma Obra</label>
+          <select id="bookSelect" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm">
+            <option value="dom_casmurro">Dom Casmurro - Machado de Assis</option>
+            <option value="arte_guerra">A Arte da Guerra - Sun Tzu</option>
+            <option value="custom">Carregar / Colar Texto Próprio</option>
+          </select>
+        </div>
+
+        <div id="customInputGroup" class="hidden space-y-3">
+          <textarea id="customTextInput" rows="4" class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-600 text-sm" placeholder="Cole seu texto aqui..."></textarea>
+          <div class="flex items-center gap-2">
+            <label class="cursor-pointer bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-xl text-xs font-medium border text-center flex-1">
+              <span>📁 Importar arquivo (.txt)</span>
+              <input type="file" id="fileInput" accept=".txt" class="hidden">
+            </label>
+            <button id="applyCustomText" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold">Aplicar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card Ajustes de Acessibilidade -->
+      <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+        <h2 class="text-base font-bold flex items-center gap-2">
+          <span>⚙️</span> Ajustes de Leitura
+        </h2>
+
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>Tamanho da Fonte</span>
+              <span id="fontSizeLabel" class="font-bold">20px</span>
+            </div>
+            <input type="range" id="fontSizeSlider" min="16" max="32" value="20" class="w-full">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>Velocidade da Voz</span>
+              <span id="rateLabel" class="font-bold">1.0x</span>
+            </div>
+            <input type="range" id="rateSlider" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Voz do Sistema</label>
+            <select id="voiceSelect" class="w-full p-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs">
+              <option value="">Carregando vozes...</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- Área de Leitura Principal -->
+    <section class="lg:col-span-2 flex flex-col bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      
+      <!-- Controles de Áudio Superiores -->
+      <div class="p-4 bg-slate-50 dark:bg-slate-700/30 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <button id="btnPrev" class="p-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 text-xl" title="Parágrafo Anterior">⏮️</button>
+          <button id="btnPlay" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold flex items-center gap-2 shadow-md">
+            <span id="playIcon">▶️</span>
+            <span id="playText">Ouvir e Ler</span>
+          </button>
+          <button id="btnStop" class="p-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 text-xl" title="Parar">⏹️</button>
+          <button id="btnNext" class="p-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 text-xl" title="Próximo Parágrafo">⏭️</button>
+        </div>
+
+        <div class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="readingProgress">
+          Parágrafo 1 de 1
+        </div>
+      </div>
+
+      <!-- Texto do Livro -->
+      <div id="readerContent" class="p-8 flex-1 overflow-y-auto space-y-6 leading-relaxed select-text" style="font-size: 20px;">
+        <!-- Parágrafos serão injetados dinamicamente via JS -->
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
