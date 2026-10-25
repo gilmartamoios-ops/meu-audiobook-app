@@ -1,27 +1,4 @@
-const BOOKS = {
-  dom_casmurro: {
-    title: "Dom Casmurro",
-    author: "Machado de Assis",
-    paragraphs: [
-      "Uma noite destas, vindo da cidade para o Engenho Novo, encontrei no trem da Central um rapaz aqui do bairro, que eu conheço de vista e de chapéu.",
-      "Cumprimentou-me, sentou-se ao pé de mim, falou da lua e dos ministros, e acabou recitando-me versos. A viagem era curta, e os versos pode ser que não fossem maus, mas eu estava cansado, fechei os olhos, fiz que dormia; não obstante, ele continuou a recitar.",
-      "Quando abri os olhos, o trem parava na minha estação. Agradeci-lhe o favor do descanso, e saí rapidamente. No dia seguinte, o rapaz disse a um vizinho que eu era um casmurro, e a alcunha pegou.",
-      "Não te enfades com a palavra. Ela é útil para explicar como o título deste livro se formou. Casmurro não é apenas o homem calado e recolhido; é também o teimoso e de opinião forte."
-    ]
-  },
-  arte_guerra: {
-    title: "A Arte da Guerra",
-    author: "Sun Tzu",
-    paragraphs: [
-      "A arte da guerra é de vital importância para o Estado. É um domínio onde se decidem a vida e a morte, o caminho para a segurança ou para a ruína.",
-      "Portanto, é um assunto de estudo que não pode ser negligenciado sob nenhuma hipótese.",
-      "A guerra é baseada no engano. Por isso, quando formos capazes de atacar, devemos parecer incapazes; ao utilizar nossas forças, devemos parecer inativos.",
-      "Quando estivermos perto, devemos fazer o inimigo acreditar que estamos longe; quando estivermos longe, devemos fazê-lo acreditar que estamos perto."
-    ]
-  }
-};
-
-let currentBook = BOOKS.dom_casmurro;
+let currentParagraphs = [];
 let currentParagraphIndex = 0;
 let isPlaying = false;
 let synth = window.speechSynthesis;
@@ -31,9 +8,20 @@ let secondsRead = 0;
 let timerInterval = null;
 
 const readerContent = document.getElementById('readerContent');
-const bookSelect = document.getElementById('bookSelect');
-const epubInputGroup = document.getElementById('epubInputGroup');
+const sourceSelect = document.getElementById('sourceSelect');
+
+const urlGroup = document.getElementById('urlGroup');
+const urlInput = document.getElementById('urlInput');
+const btnFetchUrl = document.getElementById('btnFetchUrl');
+
+const epubGroup = document.getElementById('epubGroup');
 const epubFile = document.getElementById('epubFile');
+
+const textGroup = document.getElementById('textGroup');
+const customTextInput = document.getElementById('customTextInput');
+const txtFile = document.getElementById('txtFile');
+const btnApplyText = document.getElementById('btnApplyText');
+
 const loadingStatus = document.getElementById('loadingStatus');
 
 const btnPlay = document.getElementById('btnPlay');
@@ -58,7 +46,7 @@ function loadVoices() {
   voices = synth.getVoices().filter(v => v.lang.includes('pt') || v.lang.includes('PT'));
   voiceSelect.innerHTML = '';
   if (voices.length === 0) {
-    voices = synth.getVoices(); // fallback se não achar pt específico
+    voices = synth.getVoices();
   }
   voices.forEach((voice, index) => {
     const option = document.createElement('option');
@@ -74,7 +62,19 @@ if (speechSynthesis.onvoiceschanged !== undefined) {
 
 function renderText() {
   readerContent.innerHTML = '';
-  currentBook.paragraphs.forEach((pText, idx) => {
+  if (currentParagraphs.length === 0) {
+    readerContent.innerHTML = `
+      <div class="text-center py-16 text-slate-400 dark:text-slate-500">
+        <p class="text-4xl mb-3">📄</p>
+        <p class="text-base font-semibold">Nenhum conteúdo carregado.</p>
+        <p class="text-xs mt-1">Selecione uma opção na barra lateral para carregar um artigo via link, livro EPUB ou texto.</p>
+      </div>`;
+    readingProgress.textContent = "Aguardando conteúdo...";
+    statWords.textContent = "0";
+    return;
+  }
+
+  currentParagraphs.forEach((pText, idx) => {
     const p = document.createElement('p');
     p.id = `para-${idx}`;
     p.textContent = pText;
@@ -98,20 +98,21 @@ function highlightCurrentParagraph() {
 }
 
 function updateProgress() {
-  readingProgress.textContent = `Parágrafo ${currentParagraphIndex + 1} de ${currentBook.paragraphs.length}`;
-  const totalWords = currentBook.paragraphs.reduce((acc, curr) => acc + curr.split(' ').length, 0);
+  if (currentParagraphs.length === 0) return;
+  readingProgress.textContent = `Parágrafo ${currentParagraphIndex + 1} de ${currentParagraphs.length}`;
+  const totalWords = currentParagraphs.reduce((acc, curr) => acc + curr.split(' ').length, 0);
   statWords.textContent = totalWords;
 }
 
 function speakCurrentParagraph() {
   synth.cancel();
-  if (currentParagraphIndex >= currentBook.paragraphs.length) {
+  if (currentParagraphs.length === 0 || currentParagraphIndex >= currentParagraphs.length) {
     stopReading();
     return;
   }
   highlightCurrentParagraph();
 
-  const text = currentBook.paragraphs[currentParagraphIndex];
+  const text = currentParagraphs[currentParagraphIndex];
   utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = parseFloat(rateSlider.value);
 
@@ -122,7 +123,7 @@ function speakCurrentParagraph() {
   utterance.onend = () => {
     if (isPlaying) {
       currentParagraphIndex++;
-      if (currentParagraphIndex < currentBook.paragraphs.length) {
+      if (currentParagraphIndex < currentParagraphs.length) {
         speakCurrentParagraph();
       } else {
         stopReading();
@@ -135,6 +136,7 @@ function speakCurrentParagraph() {
 }
 
 function startReading() {
+  if (currentParagraphs.length === 0) return;
   isPlaying = true;
   playIcon.textContent = '⏸️';
   playText.textContent = 'Pausar';
@@ -188,28 +190,76 @@ function stopTimer() {
 
 btnPlay.onclick = () => { isPlaying ? pauseReading() : startReading(); };
 btnStop.onclick = stopReading;
-btnNext.onclick = () => { if (currentParagraphIndex < currentBook.paragraphs.length - 1) jumpToParagraph(currentParagraphIndex + 1); };
+btnNext.onclick = () => { if (currentParagraphIndex < currentParagraphs.length - 1) jumpToParagraph(currentParagraphIndex + 1); };
 btnPrev.onclick = () => { if (currentParagraphIndex > 0) jumpToParagraph(currentParagraphIndex - 1); };
 
-bookSelect.onchange = (e) => {
+sourceSelect.onchange = (e) => {
   stopReading();
   const val = e.target.value;
-  if (val === 'custom') {
-    epubInputGroup.classList.remove('hidden');
-  } else {
-    epubInputGroup.classList.add('hidden');
-    currentBook = BOOKS[val];
-    renderText();
+  urlGroup.classList.add('hidden');
+  epubGroup.classList.add('hidden');
+  textGroup.classList.add('hidden');
+
+  if (val === 'url') urlGroup.classList.remove('hidden');
+  if (val === 'epub') epubGroup.classList.remove('hidden');
+  if (val === 'text') textGroup.classList.remove('hidden');
+};
+
+// Extrair Artigo via URL/Link
+btnFetchUrl.onclick = async () => {
+  const url = urlInput.value.trim();
+  if (!url) return;
+
+  loadingStatus.classList.remove('hidden');
+  loadingStatus.textContent = "A extrair texto do artigo...";
+  stopReading();
+
+  try {
+    // Utiliza um serviço público leitor de artigos (AllOrigins + Parser)
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const response = await fetch(proxyUrl);
+    const data = await response.json();
+
+    if (!data.contents) throw new Error("Não foi possível acessar a página.");
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(data.contents, "text/html");
+
+    // Remove elementos de navegação e anúncios
+    doc.querySelectorAll('script, style, nav, header, footer, iframe, aside').forEach(el => el.remove());
+
+    const ps = doc.querySelectorAll('p, h1, h2, h3');
+    let extracted = [];
+    ps.forEach(p => {
+      let text = p.textContent.trim();
+      if (text.length > 30) { // Ignora links e rodapés curtos
+        extracted.push(text);
+      }
+    });
+
+    if (extracted.length === 0) {
+      alert("Não foi possível extrair o texto principal do artigo. O site pode estar bloqueado.");
+    } else {
+      currentParagraphs = extracted;
+      currentParagraphIndex = 0;
+      renderText();
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Ocorreu um erro ao tentar carregar o artigo do link.");
+  } finally {
+    loadingStatus.classList.add('hidden');
   }
 };
 
-// Leitor de Ficheiro EPUB usando ePub.js
+// Leitor de EPUB
 epubFile.onchange = async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   loadingStatus.classList.remove('hidden');
-  loadingStatus.textContent = "A ler o arquivo EPUB...";
+  loadingStatus.textContent = "A ler livro EPUB...";
+  stopReading();
 
   const reader = new FileReader();
   reader.onload = async (event) => {
@@ -224,42 +274,50 @@ epubFile.onchange = async (e) => {
       for (let i = 0; i < spineItems.length; i++) {
         const item = spineItems.get(i);
         const section = await book.load(item.href);
-        
         let parser = new DOMParser();
         let doc = parser.parseFromString(section, "text/html");
         let ps = doc.querySelectorAll('p, h1, h2, h3');
-        
         ps.forEach(p => {
           let text = p.textContent.trim();
-          if (text.length > 20) { // Ignorar títulos muito curtos
-            allParagraphs.push(text);
-          }
+          if (text.length > 20) allParagraphs.push(text);
         });
       }
 
-      if (allParagraphs.length === 0) {
-        // Fallback caso não ache tags <p>
-        allParagraphs.push("Não foi possível extrair parágrafos automaticamente deste EPUB. Tente outro arquivo.");
-      }
-
-      currentBook = {
-        title: file.name.replace('.epub', ''),
-        author: "Desconhecido",
-        paragraphs: allParagraphs
-      };
-
-      loadingStatus.classList.add('hidden');
-      epubInputGroup.classList.add('hidden');
-      stopReading();
+      currentParagraphs = allParagraphs;
+      currentParagraphIndex = 0;
       renderText();
     } catch (err) {
-      console.error(err);
-      loadingStatus.textContent = "Erro ao ler o EPUB. Certifique-se de que o ficheiro é válido.";
+      alert("Erro ao ler arquivo EPUB.");
+    } finally {
+      loadingStatus.classList.add('hidden');
     }
   };
   reader.readAsArrayBuffer(file);
 };
 
+// Aplicar Texto Manual / TXT
+btnApplyText.onclick = () => {
+  const text = customTextInput.value.trim();
+  if (!text) return;
+  stopReading();
+  currentParagraphs = text.split('\n').filter(p => p.trim() !== '');
+  currentParagraphIndex = 0;
+  renderText();
+};
+
+txtFile.onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    customTextInput.value = event.target.result;
+    btnApplyText.click();
+  };
+  reader.readAsText(file);
+};
+
+// Ajustes
 fontSizeSlider.oninput = (e) => {
   const size = e.target.value;
   fontSizeLabel.textContent = `${size}px`;
