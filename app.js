@@ -1,4 +1,3 @@
-// Banco de Textos Inicial
 const BOOKS = {
   dom_casmurro: {
     title: "Dom Casmurro",
@@ -22,7 +21,6 @@ const BOOKS = {
   }
 };
 
-// Estado da Aplicação
 let currentBook = BOOKS.dom_casmurro;
 let currentParagraphIndex = 0;
 let isPlaying = false;
@@ -32,13 +30,11 @@ let voices = [];
 let secondsRead = 0;
 let timerInterval = null;
 
-// Elementos do DOM
 const readerContent = document.getElementById('readerContent');
 const bookSelect = document.getElementById('bookSelect');
-const customInputGroup = document.getElementById('customInputGroup');
-const customTextInput = document.getElementById('customTextInput');
-const applyCustomText = document.getElementById('applyCustomText');
-const fileInput = document.getElementById('fileInput');
+const epubInputGroup = document.getElementById('epubInputGroup');
+const epubFile = document.getElementById('epubFile');
+const loadingStatus = document.getElementById('loadingStatus');
 
 const btnPlay = document.getElementById('btnPlay');
 const playIcon = document.getElementById('playIcon');
@@ -58,18 +54,12 @@ const timeProgressBar = document.getElementById('timeProgressBar');
 const statWords = document.getElementById('statWords');
 const readingProgress = document.getElementById('readingProgress');
 
-// Carregar Vozes do Sistema
 function loadVoices() {
-  voices = synth.getVoices().filter(v => v.lang.includes('pt'));
+  voices = synth.getVoices().filter(v => v.lang.includes('pt') || v.lang.includes('PT'));
   voiceSelect.innerHTML = '';
-  
   if (voices.length === 0) {
-    const option = document.createElement('option');
-    option.textContent = 'Voz Português (Padrão do Sistema)';
-    voiceSelect.appendChild(option);
-    return;
+    voices = synth.getVoices(); // fallback se não achar pt específico
   }
-
   voices.forEach((voice, index) => {
     const option = document.createElement('option');
     option.value = index;
@@ -82,7 +72,6 @@ if (speechSynthesis.onvoiceschanged !== undefined) {
   speechSynthesis.onvoiceschanged = loadVoices;
 }
 
-// Renderizar Texto
 function renderText() {
   readerContent.innerHTML = '';
   currentBook.paragraphs.forEach((pText, idx) => {
@@ -97,7 +86,6 @@ function renderText() {
   updateProgress();
 }
 
-// Destacar Parágrafo Ativo
 function highlightCurrentParagraph() {
   document.querySelectorAll('#readerContent p').forEach((p, idx) => {
     if (idx === currentParagraphIndex) {
@@ -109,24 +97,18 @@ function highlightCurrentParagraph() {
   });
 }
 
-// Atualizar Indicadores
 function updateProgress() {
   readingProgress.textContent = `Parágrafo ${currentParagraphIndex + 1} de ${currentBook.paragraphs.length}`;
-  
-  // Total de palavras
   const totalWords = currentBook.paragraphs.reduce((acc, curr) => acc + curr.split(' ').length, 0);
   statWords.textContent = totalWords;
 }
 
-// Controle de Áudio (Speech)
 function speakCurrentParagraph() {
   synth.cancel();
-
   if (currentParagraphIndex >= currentBook.paragraphs.length) {
     stopReading();
     return;
   }
-
   highlightCurrentParagraph();
 
   const text = currentBook.paragraphs[currentParagraphIndex];
@@ -148,10 +130,7 @@ function speakCurrentParagraph() {
     }
   };
 
-  utterance.onerror = () => {
-    stopReading();
-  };
-
+  utterance.onerror = () => { stopReading(); };
   synth.speak(utterance);
 }
 
@@ -191,7 +170,6 @@ function jumpToParagraph(index) {
   }
 }
 
-// Cronômetro do Treino Cognitivo
 function startTimer() {
   if (timerInterval) return;
   timerInterval = setInterval(() => {
@@ -208,70 +186,80 @@ function stopTimer() {
   timerInterval = null;
 }
 
-// Event Listeners
-btnPlay.onclick = () => {
-  if (isPlaying) {
-    pauseReading();
-  } else {
-    startReading();
-  }
-};
-
+btnPlay.onclick = () => { isPlaying ? pauseReading() : startReading(); };
 btnStop.onclick = stopReading;
+btnNext.onclick = () => { if (currentParagraphIndex < currentBook.paragraphs.length - 1) jumpToParagraph(currentParagraphIndex + 1); };
+btnPrev.onclick = () => { if (currentParagraphIndex > 0) jumpToParagraph(currentParagraphIndex - 1); };
 
-btnNext.onclick = () => {
-  if (currentParagraphIndex < currentBook.paragraphs.length - 1) {
-    jumpToParagraph(currentParagraphIndex + 1);
-  }
-};
-
-btnPrev.onclick = () => {
-  if (currentParagraphIndex > 0) {
-    jumpToParagraph(currentParagraphIndex - 1);
-  }
-};
-
-// Troca de Obra
 bookSelect.onchange = (e) => {
   stopReading();
   const val = e.target.value;
   if (val === 'custom') {
-    customInputGroup.classList.remove('hidden');
+    epubInputGroup.classList.remove('hidden');
   } else {
-    customInputGroup.classList.add('hidden');
+    epubInputGroup.classList.add('hidden');
     currentBook = BOOKS[val];
     renderText();
   }
 };
 
-// Texto Personalizado
-applyCustomText.onclick = () => {
-  const text = customTextInput.value.trim();
-  if (!text) return;
-  
-  const paragraphs = text.split('\n').filter(p => p.trim() !== '');
-  currentBook = {
-    title: "Texto Personalizado",
-    author: "Você",
-    paragraphs: paragraphs
-  };
-  stopReading();
-  renderText();
-};
-
-fileInput.onchange = (e) => {
+// Leitor de Ficheiro EPUB usando ePub.js
+epubFile.onchange = async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
+  loadingStatus.classList.remove('hidden');
+  loadingStatus.textContent = "A ler o arquivo EPUB...";
+
   const reader = new FileReader();
-  reader.onload = (event) => {
-    customTextInput.value = event.target.result;
-    applyCustomText.click();
+  reader.onload = async (event) => {
+    try {
+      const buffer = event.target.result;
+      const book = ePub(buffer);
+      await book.ready;
+
+      let allParagraphs = [];
+      const spineItems = book.spine;
+
+      for (let i = 0; i < spineItems.length; i++) {
+        const item = spineItems.get(i);
+        const section = await book.load(item.href);
+        
+        let parser = new DOMParser();
+        let doc = parser.parseFromString(section, "text/html");
+        let ps = doc.querySelectorAll('p, h1, h2, h3');
+        
+        ps.forEach(p => {
+          let text = p.textContent.trim();
+          if (text.length > 20) { // Ignorar títulos muito curtos
+            allParagraphs.push(text);
+          }
+        });
+      }
+
+      if (allParagraphs.length === 0) {
+        // Fallback caso não ache tags <p>
+        allParagraphs.push("Não foi possível extrair parágrafos automaticamente deste EPUB. Tente outro arquivo.");
+      }
+
+      currentBook = {
+        title: file.name.replace('.epub', ''),
+        author: "Desconhecido",
+        paragraphs: allParagraphs
+      };
+
+      loadingStatus.classList.add('hidden');
+      epubInputGroup.classList.add('hidden');
+      stopReading();
+      renderText();
+    } catch (err) {
+      console.error(err);
+      loadingStatus.textContent = "Erro ao ler o EPUB. Certifique-se de que o ficheiro é válido.";
+    }
   };
-  reader.readAsText(file);
+  reader.readAsArrayBuffer(file);
 };
 
-// Controles Visuais e Acessibilidade
 fontSizeSlider.oninput = (e) => {
   const size = e.target.value;
   fontSizeLabel.textContent = `${size}px`;
@@ -280,27 +268,21 @@ fontSizeSlider.oninput = (e) => {
 
 rateSlider.oninput = (e) => {
   rateLabel.textContent = `${parseFloat(e.target.value).toFixed(1)}x`;
-  if (isPlaying) {
-    speakCurrentParagraph();
-  }
+  if (isPlaying) speakCurrentParagraph();
 };
 
-// Temas
 document.getElementById('themeLight').onclick = () => {
   document.documentElement.className = 'h-full';
   document.body.className = 'bg-slate-50 text-slate-800 min-h-full flex flex-col font-sans';
 };
-
 document.getElementById('themeDark').onclick = () => {
   document.documentElement.className = 'h-full dark';
   document.body.className = 'bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-full flex flex-col font-sans';
 };
-
 document.getElementById('themeSepia').onclick = () => {
   document.documentElement.className = 'h-full sepia-mode';
   document.body.className = 'bg-[#fbf0d9] text-[#5f4b32] min-h-full flex flex-col font-sans';
 };
 
-// Inicialização
 loadVoices();
 renderText();
