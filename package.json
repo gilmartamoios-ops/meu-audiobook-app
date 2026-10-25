@@ -1,0 +1,9 @@
+{
+  "name": "meu-audiobook-app",
+  "version": "1.0.0",
+  "description": "Leitor Bimodal e Treino Cognitivo por IA e Voz Sintética",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve ."
+  }
+}
