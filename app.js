@@ -17,6 +17,9 @@ const btnFetchUrl = document.getElementById('btnFetchUrl');
 const epubGroup = document.getElementById('epubGroup');
 const epubFile = document.getElementById('epubFile');
 
+const docGroup = document.getElementById('docGroup');
+const docFile = document.getElementById('docFile');
+
 const textGroup = document.getElementById('textGroup');
 const customTextInput = document.getElementById('customTextInput');
 const txtFile = document.getElementById('txtFile');
@@ -45,9 +48,7 @@ const readingProgress = document.getElementById('readingProgress');
 function loadVoices() {
   voices = synth.getVoices().filter(v => v.lang.includes('pt') || v.lang.includes('PT'));
   voiceSelect.innerHTML = '';
-  if (voices.length === 0) {
-    voices = synth.getVoices();
-  }
+  if (voices.length === 0) voices = synth.getVoices();
   voices.forEach((voice, index) => {
     const option = document.createElement('option');
     option.value = index;
@@ -67,7 +68,7 @@ function renderText() {
       <div class="text-center py-16 text-slate-400 dark:text-slate-500">
         <p class="text-4xl mb-3">📄</p>
         <p class="text-base font-semibold">Nenhum conteúdo carregado.</p>
-        <p class="text-xs mt-1">Selecione uma opção na barra lateral para carregar um artigo via link, livro EPUB ou texto.</p>
+        <p class="text-xs mt-1">Selecione uma opção na barra lateral para carregar um artigo via link, livro EPUB, Word (.docx), PDF ou texto.</p>
       </div>`;
     readingProgress.textContent = "Aguardando conteúdo...";
     statWords.textContent = "0";
@@ -198,14 +199,16 @@ sourceSelect.onchange = (e) => {
   const val = e.target.value;
   urlGroup.classList.add('hidden');
   epubGroup.classList.add('hidden');
+  docGroup.classList.add('hidden');
   textGroup.classList.add('hidden');
 
   if (val === 'url') urlGroup.classList.remove('hidden');
   if (val === 'epub') epubGroup.classList.remove('hidden');
+  if (val === 'doc') docGroup.classList.remove('hidden');
   if (val === 'text') textGroup.classList.remove('hidden');
 };
 
-// Extrair Artigo via URL/Link
+// Extrair Artigo via URL
 btnFetchUrl.onclick = async () => {
   const url = urlInput.value.trim();
   if (!url) return;
@@ -215,38 +218,31 @@ btnFetchUrl.onclick = async () => {
   stopReading();
 
   try {
-    // Utiliza um serviço público leitor de artigos (AllOrigins + Parser)
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
     const response = await fetch(proxyUrl);
     const data = await response.json();
-
-    if (!data.contents) throw new Error("Não foi possível acessar a página.");
+    if (!data.contents) throw new Error("Erro ao acessar página.");
 
     const parser = new DOMParser();
     const doc = parser.parseFromString(data.contents, "text/html");
-
-    // Remove elementos de navegação e anúncios
     doc.querySelectorAll('script, style, nav, header, footer, iframe, aside').forEach(el => el.remove());
 
     const ps = doc.querySelectorAll('p, h1, h2, h3');
     let extracted = [];
     ps.forEach(p => {
       let text = p.textContent.trim();
-      if (text.length > 30) { // Ignora links e rodapés curtos
-        extracted.push(text);
-      }
+      if (text.length > 30) extracted.push(text);
     });
 
     if (extracted.length === 0) {
-      alert("Não foi possível extrair o texto principal do artigo. O site pode estar bloqueado.");
+      alert("Não foi possível extrair o texto principal.");
     } else {
       currentParagraphs = extracted;
       currentParagraphIndex = 0;
       renderText();
     }
   } catch (err) {
-    console.error(err);
-    alert("Ocorreu um erro ao tentar carregar o artigo do link.");
+    alert("Erro ao carregar o artigo do link.");
   } finally {
     loadingStatus.classList.add('hidden');
   }
@@ -270,14 +266,12 @@ epubFile.onchange = async (e) => {
 
       let allParagraphs = [];
       const spineItems = book.spine;
-
       for (let i = 0; i < spineItems.length; i++) {
         const item = spineItems.get(i);
         const section = await book.load(item.href);
         let parser = new DOMParser();
         let doc = parser.parseFromString(section, "text/html");
-        let ps = doc.querySelectorAll('p, h1, h2, h3');
-        ps.forEach(p => {
+        doc.querySelectorAll('p, h1, h2, h3').forEach(p => {
           let text = p.textContent.trim();
           if (text.length > 20) allParagraphs.push(text);
         });
@@ -287,7 +281,7 @@ epubFile.onchange = async (e) => {
       currentParagraphIndex = 0;
       renderText();
     } catch (err) {
-      alert("Erro ao ler arquivo EPUB.");
+      alert("Erro ao ler EPUB. Tente usar a opção de Word ou TXT.");
     } finally {
       loadingStatus.classList.add('hidden');
     }
@@ -295,7 +289,67 @@ epubFile.onchange = async (e) => {
   reader.readAsArrayBuffer(file);
 };
 
-// Aplicar Texto Manual / TXT
+// QUARTA OPÇÃO: Leitor de Word (.docx) e PDF
+docFile.onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  loadingStatus.classList.remove('hidden');
+  stopReading();
+
+  const reader = new FileReader();
+  const fileName = file.name.toLowerCase();
+
+  if (fileName.endsWith('.docx')) {
+    loadingStatus.textContent = "A ler documento do Word (.docx)...";
+    reader.onload = async (event) => {
+      try {
+        const arrayBuffer = event.target.result;
+        const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+        const text = result.value;
+        currentParagraphs = text.split('\n').filter(p => p.trim() !== '');
+        currentParagraphIndex = 0;
+        renderText();
+      } catch (err) {
+        alert("Erro ao ler o documento Word.");
+      } finally {
+        loadingStatus.classList.add('hidden');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+
+  } else if (fileName.endsWith('.pdf')) {
+    loadingStatus.textContent = "A ler documento PDF...";
+    reader.onload = async (event) => {
+      try {
+        const typedarray = new Uint8Array(event.target.result);
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+        
+        let allParagraphs = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          let pageText = textContent.items.map(item => item.str).join(' ');
+          // Divide a página em frases ou blocos maiores
+          let chunks = pageText.split('. ').filter(c => c.trim().length > 10);
+          chunks.forEach(c => allParagraphs.push(c.trim() + '.'));
+        }
+
+        currentParagraphs = allParagraphs;
+        currentParagraphIndex = 0;
+        renderText();
+      } catch (err) {
+        alert("Erro ao ler o arquivo PDF.");
+      } finally {
+        loadingStatus.classList.add('hidden');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+};
+
+// Texto Manual / TXT
 btnApplyText.onclick = () => {
   const text = customTextInput.value.trim();
   if (!text) return;
@@ -308,7 +362,6 @@ btnApplyText.onclick = () => {
 txtFile.onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = (event) => {
     customTextInput.value = event.target.result;
