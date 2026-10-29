@@ -1,7 +1,7 @@
 // CONFIGURAÇÃO DO SUPABASE
-const SUPABASE_URL = "https://k0--placeholder--url.supabase.co"; // Substitua pelo seu URL do Supabase
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9--placeholder--key"; // Substitua pela sua chave anon public
-
+const SUPABASE_URL = "https://bhvlrzkhozolumagvjkny.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJodmxyemtoem9sdW1hZ3Zqa255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzMDE2MDgsImV4cCI6MjEwODg3NzYwOH0.38q-CxvRSEwWfY63EdqSAH7JvrterXgBpqGsTrflSBQ";
+  
 let supabaseClient = null;
 if (window.supabase && SUPABASE_URL.startsWith('http')) {
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
