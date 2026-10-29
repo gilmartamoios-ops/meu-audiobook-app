@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leitor Bimodal & Treino Cognitivo</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Bibliotecas para leitura de EPUB e arquivos -->
+  <!-- Bibliotecas para EPUB, PDF e Word (.docx) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.16/mammoth.browser.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -106,14 +108,15 @@
             <option value="none">-- Selecione uma opção --</option>
             <option value="url">🌐 Ler Artigo / Página Web por Link (URL)</option>
             <option value="epub">📖 Carregar Livro EPUB (.epub)</option>
+            <option value="doc">📂 Carregar Word (.docx) ou PDF</option>
             <option value="text">✍️ Colar Texto ou Carregar Arquivo (.txt)</option>
           </select>
         </div>
 
         <!-- Opção Link/URL -->
         <div id="urlGroup" class="hidden space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <label class="block text-xs text-slate-500 dark:text-slate-400 font-medium">Cole o link (URL) do artigo ou editorial:</label>
-          <input type="url" id="urlInput" placeholder="https://exemplo.com/artigo-cientifico" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs">
+          <label class="block text-xs text-slate-500 dark:text-slate-400 font-medium">Cole o link (URL) do artigo:</label>
+          <input type="url" id="urlInput" placeholder="https://exemplo.com/artigo" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs">
           <button id="btnFetchUrl" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm">
             Extrair e Ler Artigo
           </button>
@@ -122,10 +125,21 @@
         <!-- Opção EPUB -->
         <div id="epubGroup" class="hidden space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700">
           <div class="p-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-center">
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Selecione um arquivo .epub</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Selecione um ficheiro .epub</p>
             <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold inline-block">
               <span>Carregar EPUB</span>
               <input type="file" id="epubFile" accept=".epub" class="hidden">
+            </label>
+          </div>
+        </div>
+
+        <!-- Opção Word (.docx) e PDF (QUARTA OPÇÃO) -->
+        <div id="docGroup" class="hidden space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700">
+          <div class="p-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-center">
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Selecione o seu manuscrito em Word (.docx) ou PDF</p>
+            <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold inline-block">
+              <span>Carregar Word ou PDF</span>
+              <input type="file" id="docFile" accept=".docx,.pdf" class="hidden">
             </label>
           </div>
         </div>
@@ -198,7 +212,7 @@
         <div class="text-center py-16 text-slate-400 dark:text-slate-500">
           <p class="text-4xl mb-3">📄</p>
           <p class="text-base font-semibold">Nenhum conteúdo carregado.</p>
-          <p class="text-xs mt-1">Selecione uma opção na barra lateral para carregar um artigo via link, livro EPUB ou texto.</p>
+          <p class="text-xs mt-1">Selecione uma opção na barra lateral para carregar um artigo via link, livro EPUB, Word (.docx), PDF ou texto.</p>
         </div>
       </div>
 
