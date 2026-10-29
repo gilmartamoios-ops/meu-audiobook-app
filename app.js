@@ -1,13 +1,3 @@
-// CONFIGURAÇÃO DO SUPABASE
-const SUPABASE_URL = "https://bhvlrzkhozolumagvjkny.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJodmxyemtoem9sdW1hZ3Zqa255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzMDE2MDgsImV4cCI6MjEwODg3NzYwOH0.38q-CxvRSEwWfY63EdqSAH7JvrterXgBpqGsTrflSBQ";
-  
-let supabaseClient = null;
-if (window.supabase && SUPABASE_URL.startsWith('http')) {
-  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
-
-let currentUser = null;
 let currentParagraphs = [];
 let currentParagraphIndex = 0;
 let isPlaying = false;
@@ -32,17 +22,6 @@ const btnApplyText = document.getElementById('btnApplyText');
 const loadingStatus = document.getElementById('loadingStatus');
 const libraryList = document.getElementById('libraryList');
 
-const btnLoginModal = document.getElementById('btnLoginModal');
-const btnLogout = document.getElementById('btnLogout');
-const userEmailDisplay = document.getElementById('userEmailDisplay');
-const loginModal = document.getElementById('loginModal');
-const btnCloseModal = document.getElementById('btnCloseModal');
-const btnSignIn = document.getElementById('btnSignIn');
-const btnSignUp = document.getElementById('btnSignUp');
-const authEmail = document.getElementById('authEmail');
-const authPassword = document.getElementById('authPassword');
-const authError = document.getElementById('authError');
-
 const btnPlay = document.getElementById('btnPlay');
 const playIcon = document.getElementById('playIcon');
 const playText = document.getElementById('playText');
@@ -60,123 +39,37 @@ const timeProgressBar = document.getElementById('timeProgressBar');
 const statWords = document.getElementById('statWords');
 const readingProgress = document.getElementById('readingProgress');
 
-// GESTÃO DE AUTENTICAÇÃO
-async function checkUser() {
-  if (!supabaseClient) return;
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    currentUser = session.user;
-    updateAuthUI();
-    fetchLibrary();
+// GESTÃO DA ESTANTE LOCAL (LocalStorage)
+function getLocalLibrary() {
+  try {
+    return JSON.parse(localStorage.getItem('bimodal_library')) || [];
+  } catch (e) {
+    return [];
   }
 }
 
-updateAuthUI = () => {
-  if (currentUser) {
-    userEmailDisplay.textContent = currentUser.email;
-    userEmailDisplay.classList.remove('hidden');
-    btnLoginModal.classList.add('hidden');
-    btnLogout.classList.remove('hidden');
-  } else {
-    userEmailDisplay.classList.add('hidden');
-    btnLoginModal.classList.remove('hidden');
-    btnLogout.classList.add('hidden');
-    libraryList.innerHTML = `<p class="text-xs text-slate-400 italic">Faça login para ver a sua estante sincronizada.</p>`;
-  }
-};
-
-btnLoginModal.onclick = () => loginModal.classList.remove('hidden');
-btnCloseModal.onclick = () => loginModal.classList.add('hidden');
-
-btnSignIn.onclick = async () => {
-  if (!supabaseClient) return alert("Configure as credenciais do Supabase no app.js");
-  authError.classList.add('hidden');
-  const { error } = await supabaseClient.auth.signInWithPassword({
-    email: authEmail.value,
-    password: authPassword.value
-  });
-  if (error) {
-    authError.textContent = error.message;
-    authError.classList.remove('hidden');
-  } else {
-    loginModal.classList.add('hidden');
-    checkUser();
-  }
-};
-
-btnSignUp.onclick = async () => {
-  if (!supabaseClient) return alert("Configure as credenciais do Supabase no app.js");
-  authError.classList.add('hidden');
-  const { error } = await supabaseClient.auth.signUp({
-    email: authEmail.value,
-    password: authPassword.value
-  });
-  if (error) {
-    authError.textContent = error.message;
-    authError.classList.remove('hidden');
-  } else {
-    alert("Conta criada! Verifique o seu e-mail ou faça login.");
-    loginModal.classList.add('hidden');
-  }
-};
-
-btnLogout.onclick = async () => {
-  if (!supabaseClient) return;
-  await supabaseClient.auth.signOut();
-  currentUser = null;
-  updateAuthUI();
-};
-
-// GESTÃO DA ESTANTE NA NUVEM (SUPABASE)
-async function fetchLibrary() {
-  if (!supabaseClient || !currentUser) return;
-  const { data, error } = await supabaseClient
-    .from('user_library')
-    .select('id, title, paragraphs')
-    .eq('user_id', currentUser.id)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error("Erro ao buscar estante:", error);
-    return;
-  }
-  renderLibrary(data || []);
+function saveToLocalLibrary(title, paragraphs) {
+  const library = getLocalLibrary();
+  const newItem = {
+    id: Date.now().toString(),
+    title: title,
+    paragraphs: paragraphs,
+    created_at: new Date().toISOString()
+  };
+  library.unshift(newItem);
+  localStorage.setItem('bimodal_library', JSON.stringify(library));
+  renderLibrary();
 }
 
-async function saveToLibrary(title, paragraphs) {
-  if (!supabaseClient) {
-    alert("Supabase não configurado.");
-    return;
-  }
-  if (!currentUser) {
-    alert("Faça login para salvar livros na nuvem.");
-    loginModal.classList.remove('hidden');
-    return;
-  }
-
-  const { error } = await supabaseClient
-    .from('user_library')
-    .insert([{ user_id: currentUser.id, title, paragraphs }]);
-
-  if (error) {
-    alert("Erro ao salvar na nuvem: " + error.message);
-  } else {
-    fetchLibrary();
-  }
+function removeFromLocalLibrary(id) {
+  let library = getLocalLibrary();
+  library = library.filter(item => item.id !== id);
+  localStorage.setItem('bimodal_library', JSON.stringify(library));
+  renderLibrary();
 }
 
-async function removeFromLibrary(id) {
-  if (!supabaseClient || !currentUser) return;
-  const { error } = await supabaseClient
-    .from('user_library')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', currentUser.id);
-
-  if (!error) fetchLibrary();
-}
-
-function renderLibrary(library) {
+function renderLibrary() {
+  const library = getLocalLibrary();
   libraryList.innerHTML = '';
   if (library.length === 0) {
     libraryList.innerHTML = `<p class="text-xs text-slate-400 italic">Nenhum item na estante.</p>`;
@@ -201,7 +94,7 @@ function renderLibrary(library) {
     const btnDiscard = document.createElement('button');
     btnDiscard.className = 'px-2.5 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-bold text-[10px]';
     btnDiscard.textContent = 'Descartar';
-    btnDiscard.onclick = () => removeFromLibrary(item.id);
+    btnDiscard.onclick = () => removeFromLocalLibrary(item.id);
 
     div.appendChild(titleSpan);
     div.appendChild(btnRead);
@@ -240,7 +133,7 @@ function renderText() {
       <div class="text-center py-16 text-slate-400 dark:text-slate-500">
         <p class="text-4xl mb-3">📄</p>
         <p class="text-base font-semibold">Nenhum conteúdo carregado.</p>
-        <p class="text-xs mt-1">Carregue um arquivo ou escolha um item salvo na sua estante na nuvem.</p>
+        <p class="text-xs mt-1">Carregue um arquivo ou escolha um item salvo na sua estante.</p>
       </div>`;
     readingProgress.textContent = "Aguardando conteúdo...";
     statWords.textContent = "0";
@@ -379,7 +272,7 @@ sourceSelect.onchange = (e) => {
   if (val === 'text') textGroup.classList.remove('hidden');
 };
 
-// Processar Arquivos e Enviar para a Nuvem
+// Processar Arquivos e Salvar na Estante Local
 btnFetchUrl.onclick = async () => {
   const url = urlInput.value.trim();
   if (!url) return;
@@ -403,7 +296,7 @@ btnFetchUrl.onclick = async () => {
 
     if (extracted.length > 0) {
       const title = doc.title || "Artigo Web";
-      await saveToLibrary(title, extracted);
+      saveToLocalLibrary(title, extracted);
     }
   } catch (err) {
     alert("Erro ao carregar link.");
@@ -435,7 +328,7 @@ epubFile.onchange = async (e) => {
         });
       }
       const title = file.name.replace('.epub', '');
-      await saveToLibrary(title, allParagraphs);
+      saveToLocalLibrary(title, allParagraphs);
     } catch (err) {
       alert("Erro ao ler EPUB.");
     } finally {
@@ -448,7 +341,7 @@ epubFile.onchange = async (e) => {
 docFile.onchange = async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  loadingStatus.classList.remove('hidden');
+  loadingStatus.classList.add('hidden');
   stopReading();
 
   const reader = new FileReader();
@@ -461,7 +354,7 @@ docFile.onchange = async (e) => {
         const result = await mammoth.extractRawText({ arrayBuffer: event.target.result });
         const paragraphs = result.value.split('\n').filter(p => p.trim() !== '');
         const title = file.name.replace('.docx', '');
-        await saveToLibrary(title, paragraphs);
+        saveToLocalLibrary(title, paragraphs);
       } catch (err) {
         alert("Erro ao ler Word.");
       } finally {
@@ -484,7 +377,7 @@ docFile.onchange = async (e) => {
           chunks.forEach(c => allParagraphs.push(c.trim() + '.'));
         }
         const title = file.name.replace('.pdf', '');
-        await saveToLibrary(title, allParagraphs);
+        saveToLocalLibrary(title, allParagraphs);
       } catch (err) {
         alert("Erro ao ler PDF.");
       } finally {
@@ -500,8 +393,7 @@ btnApplyText.onclick = async () => {
   if (!text) return;
   stopReading();
   const paragraphs = text.split('\n').filter(p => p.trim() !== '');
-  const title = "Texto Personalizado";
-  await saveToLibrary(title, paragraphs);
+  saveToLocalLibrary("Texto Personalizado", paragraphs);
 };
 
 // Ajustes Visuais e Temas
@@ -524,5 +416,5 @@ document.getElementById('themeSepia').onclick = () => {
 };
 
 loadVoices();
-checkUser();
+renderLibrary();
 renderText();
