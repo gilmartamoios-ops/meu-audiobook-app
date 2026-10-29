@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leitor Bimodal & Treino Cognitivo</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Bibliotecas para EPUB, PDF, Word (.docx) e Supabase -->
+  <!-- Bibliotecas para EPUB, PDF e Word (.docx) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.16/mammoth.browser.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -51,18 +50,11 @@
         <div class="bg-blue-600 text-white p-2 rounded-xl font-bold text-xl">🧠</div>
         <div>
           <h1 class="text-xl font-bold leading-tight">Leitor Bimodal</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Treino Cognitivo com Estante na Nuvem</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Treino Cognitivo Inteligente</p>
         </div>
       </div>
 
       <div class="flex items-center gap-4">
-        <!-- Status de Autenticação / Login -->
-        <div id="authContainer" class="flex items-center gap-2 text-xs">
-          <span id="userEmailDisplay" class="text-slate-500 dark:text-slate-400 hidden"></span>
-          <button id="btnLoginModal" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold">Entrar / Criar Conta</button>
-          <button id="btnLogout" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-lg font-bold hidden">Sair</button>
-        </div>
-
         <div class="flex items-center gap-2 border-l pl-4 border-slate-200 dark:border-slate-700">
           <button id="themeLight" class="px-3 py-1.5 rounded-lg border text-sm font-medium bg-slate-100 dark:bg-slate-700">Claro</button>
           <button id="themeSepia" class="px-3 py-1.5 rounded-lg border text-sm font-medium bg-[#fbf0d9] text-[#5f4b32]">Sépia</button>
@@ -71,22 +63,6 @@
       </div>
     </div>
   </header>
-
-  <!-- Modal de Login -->
-  <div id="loginModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
-    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-md shadow-xl border border-slate-200 dark:border-slate-700 space-y-4">
-      <h3 class="text-lg font-bold">Aceder à sua Estante na Nuvem</h3>
-      <p class="text-xs text-slate-500">Entre com o seu e-mail e palavra-passe para sincronizar os seus textos entre o PC e o telemóvel.</p>
-      <input type="email" id="authEmail" placeholder="O seu e-mail" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-transparent text-sm">
-      <input type="password" id="authPassword" placeholder="Palavra-passe" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-transparent text-sm">
-      <div id="authError" class="text-xs text-rose-500 hidden"></div>
-      <div class="flex gap-2 pt-2">
-        <button id="btnSignIn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl text-xs font-bold">Entrar</button>
-        <button id="btnSignUp" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl text-xs font-bold">Criar Conta</button>
-      </div>
-      <button id="btnCloseModal" class="w-full text-xs text-slate-400 hover:underline pt-2">Cancelar</button>
-    </div>
-  </div>
 
   <!-- Conteúdo Principal -->
   <main class="max-w-5xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -166,13 +142,13 @@
         <p id="loadingStatus" class="text-xs text-center text-blue-600 dark:text-blue-400 font-medium hidden">A processar...</p>
       </section>
 
-      <!-- Minha Estante na Nuvem -->
+      <!-- Estante Local Inteligente -->
       <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
         <h2 class="text-base font-bold flex items-center gap-2">
-          <span>☁️</span> Estante na Nuvem
+          <span>📑</span> A Minha Estante
         </h2>
         <div id="libraryList" class="space-y-2 max-h-48 overflow-y-auto">
-          <p class="text-xs text-slate-400 italic">Faça login para ver a sua estante sincronizada.</p>
+          <p class="text-xs text-slate-400 italic">Nenhum item salvo na estante.</p>
         </div>
       </section>
 
@@ -229,7 +205,7 @@
         <div class="text-center py-16 text-slate-400 dark:text-slate-500">
           <p class="text-4xl mb-3">📄</p>
           <p class="text-base font-semibold">Nenhum conteúdo carregado.</p>
-          <p class="text-xs mt-1">Faça login e carregue um arquivo ou escolha um item da sua estante na nuvem.</p>
+          <p class="text-xs mt-1">Carregue um arquivo ou escolha um item da sua estante local.</p>
         </div>
       </div>
 
