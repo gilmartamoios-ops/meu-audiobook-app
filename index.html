@@ -96,88 +96,71 @@
         </div>
       </section>
 
-      <!-- Fonte da Leitura -->
+      <!-- Fonte da Leitura & Estante Local -->
       <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
         <h2 class="text-base font-bold flex items-center gap-2">
-          <span>📚</span> Selecionar Conteúdo
+          <span>📚</span> Carregar Novo Conteúdo
         </h2>
 
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Como deseja ler?</label>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Origem do Ficheiro</label>
           <select id="sourceSelect" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium">
             <option value="none">-- Selecione uma opção --</option>
             <option value="url">🌐 Ler Artigo / Página Web por Link (URL)</option>
             <option value="epub">📖 Carregar Livro EPUB (.epub)</option>
             <option value="doc">📂 Carregar Word (.docx) ou PDF</option>
-            <option value="text">✍️ Colar Texto ou Carregar Arquivo (.txt)</option>
+            <option value="text">✍️ Colar Texto ou Arquivo (.txt)</option>
           </select>
         </div>
 
         <!-- Opção Link/URL -->
         <div id="urlGroup" class="hidden space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <label class="block text-xs text-slate-500 dark:text-slate-400 font-medium">Cole o link (URL) do artigo:</label>
           <input type="url" id="urlInput" placeholder="https://exemplo.com/artigo" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs">
-          <button id="btnFetchUrl" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm">
-            Extrair e Ler Artigo
-          </button>
+          <button id="btnFetchUrl" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs">Extrair Artigo</button>
         </div>
 
         <!-- Opção EPUB -->
         <div id="epubGroup" class="hidden space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <div class="p-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-center">
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Selecione um ficheiro .epub</p>
-            <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold inline-block">
-              <span>Carregar EPUB</span>
-              <input type="file" id="epubFile" accept=".epub" class="hidden">
-            </label>
-          </div>
+          <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded-xl text-xs font-bold block text-center">
+            <span>Carregar EPUB</span>
+            <input type="file" id="epubFile" accept=".epub" class="hidden">
+          </label>
         </div>
 
-        <!-- Opção Word (.docx) e PDF (QUARTA OPÇÃO) -->
+        <!-- Opção Word / PDF -->
         <div id="docGroup" class="hidden space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <div class="p-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-center">
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Selecione o seu manuscrito em Word (.docx) ou PDF</p>
-            <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold inline-block">
-              <span>Carregar Word ou PDF</span>
-              <input type="file" id="docFile" accept=".docx,.pdf" class="hidden">
-            </label>
-          </div>
+          <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded-xl text-xs font-bold block text-center">
+            <span>Carregar Word ou PDF</span>
+            <input type="file" id="docFile" accept=".docx,.pdf" class="hidden">
+          </label>
         </div>
 
-        <!-- Opção Texto Livre / TXT -->
+        <!-- Opção Texto -->
         <div id="textGroup" class="hidden space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <textarea id="customTextInput" rows="4" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs" placeholder="Cole o texto aqui..."></textarea>
-          <div class="flex items-center gap-2">
-            <label class="cursor-pointer bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-xl text-xs font-medium border text-center flex-1">
-              <span>📁 Ficheiro .txt</span>
-              <input type="file" id="txtFile" accept=".txt" class="hidden">
-            </label>
-            <button id="btnApplyText" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold">Aplicar</button>
-          </div>
+          <textarea id="customTextInput" rows="3" class="w-full p-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs" placeholder="Cole o texto..."></textarea>
+          <button id="btnApplyText" class="w-full bg-blue-600 text-white py-2 rounded-xl text-xs font-bold">Aplicar Texto</button>
         </div>
 
-        <p id="loadingStatus" class="text-xs text-center text-blue-600 dark:text-blue-400 font-medium hidden">A processar o conteúdo...</p>
+        <p id="loadingStatus" class="text-xs text-center text-blue-600 dark:text-blue-400 font-medium hidden">A processar...</p>
       </section>
 
-      <!-- Ajustes de Acessibilidade -->
-      <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+      <!-- Minha Estante Local (Com LER e DESCARTAR) -->
+      <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
         <h2 class="text-base font-bold flex items-center gap-2">
-          <span>⚙️</span> Ajustes de Leitura
+          <span>📂</span> Minha Estante (Recentes)
         </h2>
+        <div id="libraryList" class="space-y-2 max-h-48 overflow-y-auto">
+          <p class="text-xs text-slate-400 italic">Nenhum livro salvo na estante.</p>
+        </div>
+      </section>
+
+      <!-- Ajustes -->
+      <section class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+        <h2 class="text-base font-bold flex items-center gap-2"><span>⚙️</span> Ajustes de Leitura</h2>
         <div class="space-y-3">
           <div>
-            <div class="flex justify-between text-xs mb-1">
-              <span>Tamanho da Fonte</span>
-              <span id="fontSizeLabel" class="font-bold">20px</span>
-            </div>
+            <div class="flex justify-between text-xs mb-1"><span>Tamanho da Fonte</span><span id="fontSizeLabel" class="font-bold">20px</span></div>
             <input type="range" id="fontSizeSlider" min="16" max="32" value="20" class="w-full">
-          </div>
-          <div>
-            <div class="flex justify-between text-xs mb-1">
-              <span>Velocidade da Voz</span>
-              <span id="rateLabel" class="font-bold">1.0x</span>
-            </div>
-            <input type="range" id="rateSlider" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full">
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Voz do Sistema</label>
@@ -190,19 +173,33 @@
 
     </aside>
 
-    <!-- Área de Leitura Principal -->
+    <!-- Área Principal de Leitura -->
     <section class="lg:col-span-2 flex flex-col bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
       
-      <div class="p-4 bg-slate-50 dark:bg-slate-700/30 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-4">
+      <!-- Controles de Áudio Superiores + Velocidade -->
+      <div class="p-4 bg-slate-50 dark:bg-slate-700/30 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-2">
-          <button id="btnPrev" class="p-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 text-xl" title="Parágrafo Anterior">⏮️</button>
-          <button id="btnPlay" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold flex items-center gap-2 shadow-md">
+          <button id="btnPrev" class="p-2.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 text-lg" title="Anterior">⏮️</button>
+          <button id="btnPlay" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-sm flex items-center gap-2 shadow-md">
             <span id="playIcon">▶️</span>
             <span id="playText">Ouvir e Ler</span>
           </button>
-          <button id="btnStop" class="p-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 text-xl" title="Parar">⏹️</button>
-          <button id="btnNext" class="p-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 text-xl" title="Próximo Parágrafo">⏭️</button>
+          <button id="btnStop" class="p-2.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 text-lg" title="Parar">⏹️</button>
+          <button id="btnNext" class="p-2.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 text-lg" title="Próximo">⏭️</button>
         </div>
+
+        <!-- Seletor Rápido de Velocidade -->
+        <div class="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-600">
+          <span class="text-xs font-medium text-slate-500">Velocidade:</span>
+          <select id="speedSelect" class="bg-transparent text-xs font-bold text-blue-600 dark:text-blue-400 focus:outline-none">
+            <option value="0.75">0.75x</option>
+            <option value="1.0" selected>1.0x (Normal)</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2.0">2.0x</option>
+          </select>
+        </div>
+
         <div class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="readingProgress">
           Aguardando conteúdo...
         </div>
@@ -212,7 +209,7 @@
         <div class="text-center py-16 text-slate-400 dark:text-slate-500">
           <p class="text-4xl mb-3">📄</p>
           <p class="text-base font-semibold">Nenhum conteúdo carregado.</p>
-          <p class="text-xs mt-1">Selecione uma opção na barra lateral para carregar um artigo via link, livro EPUB, Word (.docx), PDF ou texto.</p>
+          <p class="text-xs mt-1">Carregue um arquivo ou escolha um item salvo na sua estante lateral.</p>
         </div>
       </div>
 
